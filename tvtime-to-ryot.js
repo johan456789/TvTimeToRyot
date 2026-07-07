@@ -10,15 +10,15 @@ async function getEpisodesFromTvTimeCSV() {
     const rows = await new Promise((resolve, reject) => {
         const data = [];
         fs.createReadStream("./seen_episode.csv")
-            .pipe(parse({delimiter: ",", from_line: 2}))
+            .pipe(parse({columns: true, from_line: 2}))
             .on("data", function (row) {
                 const episode = {
-                    episode_number: row[0],
-                    episode_id: row[1],
-                    created_at: new Date(row[2]),
-                    episode_season_number: row[3],
-                    show_name: row[5],
-                    updatedAt: new Date(row[7])
+                    episode_number: row.episode_number,
+                    episode_id: row.episode_id,
+                    created_at: new Date(row.created_at),
+                    episode_season_number: row.episode_season_number,
+                    show_name: row.tv_show_name,
+                    updatedAt: new Date(row.updated_at)
                 };
                 data.push(episode);
             }).on('end', () => resolve(data))
@@ -31,15 +31,15 @@ async function getTvShowsFromTvTimeCSV() {
     const rows = await new Promise((resolve, reject) => {
         const data = [];
         fs.createReadStream("./followed_tv_show.csv")
-            .pipe(parse({delimiter: ",", from_line: 2}))
+            .pipe(parse({columns: true, from_line: 2}))
             .on("data", function (row) {
                 const tvShow = {
-                    id: row[0],
-                    createdAt: new Date(row[1]),
-                    active: row[2] === "1",
-                    name: row[5],
-                    updatedAt: new Date(row[7]),
-                    archived: row[10] === "1"
+                    id: row.tv_show_id,
+                    createdAt: new Date(row.created_at),
+                    active: row.active === "1",
+                    name: row.tv_show_name,
+                    updatedAt: new Date(row.updated_at),
+                    archived: row.archived === "1"
                 };
                 data.push(tvShow);
             }).on('end', () => resolve(data))
