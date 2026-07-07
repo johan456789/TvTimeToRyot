@@ -57,7 +57,7 @@ You need to copy the one labeled as **API Key Auth**
 
 To run the script, just be sure that you have node installed on your computer, at least Node 18.*
 
-`npm install`
+`pnpm install`
 
 `node tvtime-to-ryot.js`
 
