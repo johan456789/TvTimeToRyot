@@ -2,13 +2,18 @@
 
 ## Information
 
-This is a personal project, that could be interesting for other people in the same situation as I was.
+TV time is shutting down. So I want to migrate to something open source to avoid having to deal with this again in the future.
 
-I discovered [Ryot](https://github.com/IgnisDa/ryot), and wanted to start to use it to track the TV shows I watch.
+[Ryot](https://github.com/IgnisDa/ryot) seems to be pretty good.
 
-Until now, I was using [TvTime](https://www.tvtime.com/) to store this information, but as I want to keep 100% control of my data, I chose [Ryot](https://github.com/IgnisDa/ryot).
+This script automates the import of TV time data to Ryot. Ryot supports both TVDB and TMDB. This scripts uses TVDB too for compatibility with TV Time.
 
-So this is a small script to automatize the export of my ratings from [TvTime](https://www.tvtime.com/) and generate a JSON with following the Ryot's specification to import them into [Ryot](https://github.com/IgnisDa/ryot).
+ONLY some data is imported:
+
+- TV shows episode watches (including watch dates)
+- TV shows not yet started (these are saved to watchlists in Ryot)
+
+All other data like movies, comments, reviews are not imported. You can fork this and add the support you need.
 
 > Run this script and import the data on you own risk, I recommend try it first on an empty instance of Ryot to avoid data loses, or at least make some backups if you have some previous data.
 
@@ -19,11 +24,8 @@ So this is a small script to automatize the export of my ratings from [TvTime](h
 
 ### Get your Data from TV Time
 
-TV Time's API is not open. In order to get access to your personal data, you will have to request it from TV Time's support via a GDPR request - or maybe just ask for it, whatever works, it's your data.
+Get your data at <https://gdpr.tvtime.com/gdpr/self-service> before July 15, 2026.
 
-Copy the template provided by www.datarequests.org into an email
-Send it to support@tvtime.com
-Wait a few working days for their team to process your request
 Extract the data somewhere safe on your local system
 
 ### Work on it!
