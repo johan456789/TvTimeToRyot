@@ -9,8 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.5.1",
-    "csv-parse": "^5.5.2",
-    "node-themoviedb": "^0.2.8"
+    "csv-parse": "^5.5.2"
   }
 }

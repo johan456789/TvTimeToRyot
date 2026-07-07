@@ -81,6 +81,6 @@ Finally, when all the process finish, you should have a file named `tvshows-ryot
 
 After this you should just import this file into your Ryot instance.
 
-Navigate in your browser to Ryot, and click on **_Imports and Exports_**, select **_Media Json as source_**, and **_the file_**, press **_import_** and wait a bit, and everything should be fine.
+Navigate in your browser to Ryot, and click on **_Imports and Exports_**, select **_Generic Json as source_**, and **_the file_**, press **_import_** and wait a bit, and everything should be fine.
 
 ![The import process on Ryot](images/import_to_ryot.png)

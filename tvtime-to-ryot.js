@@ -1,169 +1,96 @@
 const fs = require("fs");
 const {parse} = require("csv-parse");
-const MovieDB = require('node-themoviedb');
 
-const tmdb_api_key = "FILL_WITH_YOUR_VALUE";
-
-const mdb = new MovieDB(tmdb_api_key);
-
-async function getEpisodesFromTvTimeCSV() {
+async function getWatchHistoryFromTrackingCSV() {
     const rows = await new Promise((resolve, reject) => {
         const data = [];
-        fs.createReadStream("./seen_episode.csv")
-            .pipe(parse({columns: true, from_line: 2}))
+        fs.createReadStream("./tracking-prod-records-v2.csv")
+            .pipe(parse({columns: true}))
             .on("data", function (row) {
-                const episode = {
-                    episode_number: row.episode_number,
-                    episode_id: row.episode_id,
-                    created_at: new Date(row.created_at),
-                    episode_season_number: row.episode_season_number,
-                    show_name: row.tv_show_name,
-                    updatedAt: new Date(row.updated_at)
-                };
-                data.push(episode);
-            }).on('end', () => resolve(data))
-    });
-
-    return await rows;
-}
-
-async function getTvShowsFromTvTimeCSV() {
-    const rows = await new Promise((resolve, reject) => {
-        const data = [];
-        fs.createReadStream("./followed_tv_show.csv")
-            .pipe(parse({columns: true, from_line: 2}))
-            .on("data", function (row) {
-                const tvShow = {
-                    id: row.tv_show_id,
-                    createdAt: new Date(row.created_at),
-                    active: row.active === "1",
-                    name: row.tv_show_name,
-                    updatedAt: new Date(row.updated_at),
-                    archived: row.archived === "1"
-                };
-                data.push(tvShow);
-            }).on('end', () => resolve(data))
-    });
-
-    return await rows;
-}
-
-async function addMovieDbId(shows) {
-    const showsWithMDBId = [];
-    for (const show of shows) {
-        let movieDbId = parseManuallyShows(show);
-
-        if (movieDbId === 0) {
-            const res = await mdb.search.TVShows({
-                query: {
-                    query: show.name
+                const key = row.key || "";
+                if (key.startsWith("watch-episode-") || key.startsWith("rewatch-episode-")) {
+                    data.push({
+                        tvdb_id: row.s_id,
+                        series_name: row.series_name,
+                        season_number: row.season_number,
+                        episode_number: row.episode_number,
+                        created_at: new Date(row.created_at),
+                        is_rewatch: key.startsWith("rewatch-episode-")
+                    });
                 }
-            });
-
-            let movieDbId = 0;
-            if (res.data.results.length === 0) {
-                console.error("Show not have custom id", show);
-            } else {
-                movieDbId = res.data.results[0].id;
-            }
-        }
-
-        if (movieDbId > 0) {
-            showsWithMDBId.push({movieDbId: movieDbId, ...show});
-        }
-    }
-    return showsWithMDBId;
-}
-
-function parseManuallyShows(show) {
-    switch (show.name) {
-        case "The One That Looms":
-            return 35338;
-        case "Break Point (2023)":
-            return 216386;
-        case "Untold (2021)":
-            return 0;
-        case "Informe+":
-            return 210761;
-        case "The Challenge (2020)":
-            return 194877;
-        case "High Score (2020)":
-            return 106754;
-        case "Living Abroad":
-            return 104505;
-        case "Hyperdrive (2019)":
-            return 91766;
-        case "Luis, the sage of success":
-            return 85242;
-        case "Perfect Life (2019)":
-            return 94734;
-        case "Welcome to the Family (2018)":
-            return 76567;
-        case "Genius (2017)":
-            return 70128;
-        case "Mars (2016)":
-            return 68427;
-        case "All or Nothing: American Football":
-            return 66943;
-        case "The End of Comedy":
-            return 71091;
-        case "Top Chef (ES)":
-            return 102851;
-        case "Cosmos (2014)":
-            return 58474;
-        case "White Glove":
-            return 71251;
-        case "Archer (2009)":
-            return 10283;
-        case "Bad Living":
-            return 39485;
-        default:
-            return 0;
-    }
-}
-
-function generateEpisodeHistory(seen_episodes) {
-    return seen_episodes.map(x => {
-        return {
-            progress: 100,
-            show_episode_number: parseInt(x.episode_number),
-            show_season_number: parseInt(x.episode_season_number),
-            ended_on: x.updatedAt
-        }
+            }).on('end', () => resolve(data))
     });
+
+    return await rows;
+}
+
+function groupByShow(watchHistory) {
+    const shows = {};
+    for (const watch of watchHistory) {
+        if (!shows[watch.tvdb_id]) {
+            shows[watch.tvdb_id] = {
+                id: watch.tvdb_id,
+                name: watch.series_name,
+                episodes: []
+            };
+        }
+        shows[watch.tvdb_id].episodes.push({
+            season_number: parseInt(watch.season_number),
+            episode_number: parseInt(watch.episode_number),
+            created_at: watch.created_at,
+            is_rewatch: watch.is_rewatch
+        });
+    }
+    return Object.values(shows);
+}
+
+function generateSeenHistory(episodes) {
+    episodes.sort((a, b) => a.created_at - b.created_at);
+    
+    return episodes.map(ep => ({
+        progress: "100",
+        show_episode_number: ep.episode_number,
+        show_season_number: ep.season_number,
+        ended_on: ep.created_at,
+        started_on: null,
+        state: "completed"
+    }));
 }
 
 function convertToRyotJson(shows) {
     const result = [];
     for (const s of shows) {
-        result.push({
-            collections: [],
-            identifier: s.movieDbId.toString(),
-            lot: "Show",
-            reviews: [],
-            seen_history: generateEpisodeHistory(s.seen_episodes),
-            source: "Tmdb",
-            source_id: s.movieDbId.toString()
-        });
+        const seen_history = generateSeenHistory(s.episodes);
+        if (seen_history.length > 0) {
+            result.push({
+                collections: [],
+                identifier: s.id,
+                lot: "show",
+                reviews: [],
+                seen_history: seen_history,
+                source: "tvdb",
+                source_id: s.id
+            });
+        }
     }
-
     return result;
 }
 
-function addEpisodesToShows(shows, episodes) {
-    return shows.map(s => {
-        return {seen_episodes: episodes.filter(x => x.show_name === s.name), ...s};
-    });
-}
-
 async function run() {
-    const shows = await getTvShowsFromTvTimeCSV();
-    const episodes = await getEpisodesFromTvTimeCSV();
-    const showsWithMovieId = await addMovieDbId(shows);
-    const showsWithEpisodes = addEpisodesToShows(showsWithMovieId, episodes);
-    const theFinalJson = convertToRyotJson(showsWithEpisodes);
+    const watchHistory = await getWatchHistoryFromTrackingCSV();
+    const shows = groupByShow(watchHistory);
+    const metadata = convertToRyotJson(shows);
 
-    fs.appendFileSync("./tvshows-ryot.json", JSON.stringify(theFinalJson));
+    fs.writeFileSync("./tvshows-ryot.json", JSON.stringify({
+        metadata: metadata,
+        collections: null,
+        exercises: null,
+        measurements: null,
+        metadata_groups: null,
+        people: null,
+        workout_templates: null,
+        workouts: null
+    }));
 }
 
 run();
