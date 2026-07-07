@@ -15,7 +15,6 @@ So this is a small script to automatize the export of my ratings from [TvTime](h
 ## Requirements
 
 - You need an export from TvTime.
-- You need an api key from [The Movie Database](https://www.themoviedb.org/) in order to match the results from the TvTime's CSVs to Ryot. [How to get a key](https://developers.themoviedb.org/3/getting-started/introduction)
 - You need an instance of [Ryot](https://github.com/IgnisDa/ryot)
 
 ### Get your Data from TV Time
@@ -29,29 +28,12 @@ Extract the data somewhere safe on your local system
 
 ### Work on it!
 
-When you get your TvTime copy with your data, you will need to take only two files into account.
+When you get your TvTime copy with your data, you will need to take two files into account.
 
-You need to import these files in the same place that you have the `tvtime-to-ryot.js file.
+You need to copy these files to the same place where you have the `tvtime-to-ryot.js` file:
 
-Here are some small examples of the content of the two CSV files. `followed_tv_show.csv` and `seen_episode.csv
-
-> seen_episode.csv
-![seen_episode.csv example](images/seen_episodes.png)
-
-> followed_tv_show.csv
-![followed_tv_show.csv example](images/followed_tv_shows.png)
-
-## Usage
-
-At the top of the script, you can find some strings with the text **FILL_WITH_YOUR_VALUE**, just replace it, with your own values.
-
-- `tmdb_api_key`: here you need to take the api key from your profile in the movie database.
-
-![The Movie Database Api Key](images/tmdb_api_key.png)
-
-You need to copy the one labeled as **API Key Auth**
-![image](https://github.com/user-attachments/assets/16139a26-594a-4978-8517-f28dedce172e)
-
+- `tracking-prod-records-v2.csv` - Contains all your watch history with TVDB IDs
+- `followed_tv_show.csv` - Contains your followed shows list
 
 ## Run
 
@@ -61,25 +43,15 @@ To run the script, just be sure that you have node installed on your computer, a
 
 `node tvtime-to-ryot.js`
 
-While the script is running you get some information about the process of importing data.
-
-## Troubleshooting
-
-Is it possible that in your lists from TvTime, you get some programs that could not be correctly identified with The Movie Database API, in that case, you get printed an error indicated you have a show without an ID, in that case you can try to find it manually the ID in The Movie Database website, and pasted in the section CustomIds.
-
-![Cannot find a custom ID](images/custom_ids_error.png)
-
-I left in the script all the ones I found issues with, so maybe you can use them.
-
-![List with custom ids](images/list_custom_ids.png)
+The script will generate `tvshows-ryot.json` with your watched shows and `tvshows-ryot-watchlist.json` with your unwatched followed shows.
 
 ## Import to Ryot
 
-Finally, when all the process finish, you should have a file named `tvshows-ryot.json`, that looks something like that.
+Finally, when the process finishes, you should have two files:
+- `tvshows-ryot.json` - Contains your watched shows with episode history
+- `tvshows-ryot-watchlist.json` - Contains your followed but unwatched shows in Watchlist
 
-![The JSON ready to Ryot](images/ryot_json_file.png)
-
-After this you should just import this file into your Ryot instance.
+Import both files into your Ryot instance.
 
 Navigate in your browser to Ryot, and click on **_Imports and Exports_**, select **_Generic Json as source_**, and **_the file_**, press **_import_** and wait a bit, and everything should be fine.
 
