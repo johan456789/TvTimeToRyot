@@ -24,6 +24,22 @@ async function getWatchHistoryFromTrackingCSV() {
     return await rows;
 }
 
+async function getFollowedShowsFromCSV() {
+    const rows = await new Promise((resolve, reject) => {
+        const data = [];
+        fs.createReadStream("./followed_tv_show.csv")
+            .pipe(parse({columns: true}))
+            .on("data", function (row) {
+                data.push({
+                    tvdb_id: row.tv_show_id,
+                    name: row.tv_show_name
+                });
+            }).on('end', () => resolve(data))
+    });
+
+    return await rows;
+}
+
 function groupByShow(watchHistory) {
     const shows = {};
     for (const watch of watchHistory) {
@@ -76,10 +92,40 @@ function convertToRyotJson(shows) {
     return result;
 }
 
+function convertUnwatchedToRyotJson(shows) {
+    const now = new Date().toISOString();
+    return shows.map(s => ({
+        collections: [{
+            collection_id: "Watchlist",
+            collection_name: "Watchlist",
+            created_on: now,
+            creator_user_id: "import",
+            information: null,
+            last_updated_on: now
+        }],
+        identifier: s.id,
+        lot: "show",
+        reviews: [],
+        seen_history: [],
+        source: "tvdb",
+        source_id: s.id
+    }));
+}
+
 async function run() {
     const watchHistory = await getWatchHistoryFromTrackingCSV();
-    const shows = groupByShow(watchHistory);
-    const metadata = convertToRyotJson(shows);
+    const followedShows = await getFollowedShowsFromCSV();
+    const watchedShows = groupByShow(watchHistory);
+    const watchedIds = new Set(watchedShows.map(s => s.id));
+    
+    const unwatchedShows = followedShows
+        .filter(s => !watchedIds.has(s.tvdb_id))
+        .map(s => ({ id: s.tvdb_id, name: s.name, unwatched: true }));
+    
+    const metadata = [
+        ...convertToRyotJson(watchedShows),
+        ...convertUnwatchedToRyotJson(unwatchedShows)
+    ];
 
     fs.writeFileSync("./tvshows-ryot.json", JSON.stringify({
         metadata: metadata,
